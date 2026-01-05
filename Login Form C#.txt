@@ -1,0 +1,529 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Data.SqlClient;
+using System.Windows.Forms;
+using C1.Win.C1FlexGrid;
+namespace SWOT_MFG
+{
+    public partial class YfileMe : Form
+    {
+        SWOTCommon SW = new SWOTCommon();
+        SWOTCommonNew SW1 = new SWOTCommonNew();
+        Blayer BL = new Blayer();
+        String StrAction, StrErrorResult;
+        DataTable dt = new DataTable();
+        private int CurrentPageIndex = 1;
+        private int TotalPage = 0;
+
+
+        public YfileMe()
+        {
+            InitializeComponent();
+        }
+                private void InsertUOM(String Type)
+        {
+           
+            string incNo=txtID.Text.Substring(3,3);
+            int inc = Convert.ToInt32(incNo);
+            dt = BL.Yuspi(txtName.Text, txtID.Text, txtPass.Text,inc,combo.Text,Type);   
+
+            StrErrorResult = BL.checkErrorinDatatable(dt);
+            if (StrErrorResult == "No Error" || StrErrorResult == "No Records")
+            {
+                MessageBox.Show("" + dt.Rows[0][0].ToString() + "", SW.strCompanyName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                SW.SWCntrlsClear(this);
+                SW.SetFunctionalrights("Warehouse", "Area");
+                StrAction = "Save";
+                SW.SWFormButtonStatus(this, "Save");
+                txtName.Focus();
+                Codegen();
+            }
+            else
+            {
+                MessageBox.Show("Error Result :" + StrErrorResult.ToString());
+            }
+        }
+        public void ChangeRecord(String StrAction)
+        {
+            String StrFlagtype = "";
+            if (StrAction == "Save")
+            {
+                StrFlagtype = "Insert";
+                InsertUOM(StrFlagtype);
+            }
+            else if (StrAction == "Update")
+            {
+                StrFlagtype = "Update";
+                InsertUOM(StrFlagtype);
+            }
+        }
+
+         public void Codegen()
+        {
+            DataTable dt = new DataTable();
+            dt = BL.Yusps("", "MaxIncNo");
+
+            if (Convert.ToInt32(dt.Rows[0]["inc"]) == 0)
+            {
+                int incno = Convert.ToInt32(dt.Rows[0]["inc"]);
+                txtID.Text =  "NEW" + "001";//+ Convert.ToString(String.Format("{0:D2}",incno));
+            }
+            else
+            {
+                int incno = Convert.ToInt32(dt.Rows[0]["inc"]);
+                txtID.Text = "NEW" + Convert.ToString(String.Format("{0:D3}", incno + 1));
+            }
+        }
+
+         private void SFill()
+         {
+             DataTable DT = new DataTable();
+
+             //FlexGrdPurIndNo.Rows.Count = 1;
+             DT = BL.Yusps("", "FillGrid1");
+
+             if (DT.Rows.Count > 0)
+             {
+                 FlxGridLayout.DataSource = DT;
+                 SW.SWRowHeaderNocomp(FlxGridLayout);
+             }
+             else
+             {
+                 FlxGridLayout.DataSource = DT;
+                 FlxGridLayout.Refresh();
+             }
+
+             //for (int i = 0; i < DT.Rows.Count; i++)
+             //{
+             //    FlxGridLayout.Rows.Add();
+             //    FlxGridLayout[i + 1, 1] = DT.Rows[i]["yid"].ToString();
+             //    FlxGridLayout[i + 1, 2] = DT.Rows[i]["yname"].ToString();
+
+
+             //    SW.SWRowHeaderNocomp(FlxGridLayout);
+             //}
+         }
+
+
+
+         private void FillGrid()
+         {
+             DataTable DT = new DataTable();
+             //FlexGrdPurIndNo.Rows.Count = 1;
+
+             //sShow();
+             //Filldt = BL.get("FillGrid1", "", "");
+             DT = BL.Yusps("","FillGrid1");
+
+             if (DT.Rows.Count > 0)
+             {
+                 FlxGridLayout.DataSource = DT;
+                 SW.SWRowHeaderNocomp(FlxGridLayout);
+             }
+             else
+             {
+                 FlxGridLayout.DataSource = DT;
+                 FlxGridLayout.Refresh();
+             }
+
+             //for (int i = 0; i < DT.Rows.Count; i++)
+             //{
+             //    FlxGridLayout.Rows.Add();
+             //    FlxGridLayout[i + 1, 1] = DT.Rows[i]["yid"].ToString();
+             //    FlxGridLayout[i + 1, 2] = DT.Rows[i]["yname"].ToString();
+
+
+             //    SW.SWRowHeaderNocomp(FlxGridLayout);
+             //}
+            
+         }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            MessageBox.Show("WELCOME TO THE SIGN IN FORM");
+             Codegen();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (btnSubmit.Text == "&Submit")
+                {
+                    StrAction = "Save";
+                }
+                else
+                {
+                    StrAction = "Update";
+                }
+                if (txtName.Text == "")
+                {
+                    MessageBox.Show("Text Name should not be empty", SW.strCompanyName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txtID.Focus();
+                }
+                else
+                {
+                    if (SW.ValidateForm(this))
+                    {
+                        if (MessageBox.Show("Do you want to " + StrAction + " the details?", SW.strCompanyName, MessageBoxButtons.YesNo) == DialogResult.Yes)
+                        {
+                            ChangeRecord(StrAction);
+                           
+                            
+
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.StackTrace st = new System.Diagnostics.StackTrace(true);
+                System.Diagnostics.StackFrame sf = st.GetFrame(0);
+                BL.ErrorReport(this.Text, sf.GetMethod().Name, ex.Message.ToString().Replace("'", "''"), MdlAuto.StrUserName);
+                MessageBox.Show(ex.Message.ToString());
+            }
+        }
+
+        private void tabPage1_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Don't Click on the Tabpage");
+        }
+
+        private void label5_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Enter Your Name First");
+        }
+
+        private void label6_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Enter Your Password Correctly");
+        }
+
+        private void label8_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Choose Your Role Correctly");
+        }
+
+        
+        private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+            if (tabControl1.SelectedTab.Text == "EDIT")
+            {
+
+                if (Convert.ToDouble(FlxGridLayout.Rows.Count) > 1)
+                {
+
+                    FillGrid();
+                }
+
+                else
+                {
+                    FillGrid();
+
+                }
+            }
+           
+        }
+
+      
+        private void CalculateTotalPages(int PageSize)
+        {
+
+            dt = BL.Yusps("","Fill");
+            int rowCount = dt.Rows.Count;
+            this.TotalPage = rowCount / PageSize;
+            if (rowCount % PageSize > 0) // if remainder is more than  zero 
+            {
+                this.TotalPage += 1;
+            }
+        }
+       
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            CalculateTotalPages(Convert.ToInt32(CmbPageSize.Text));
+            this.CurrentPageIndex = 1;
+            Page.Text = "Of " + TotalPage.ToString() + " " + "Pages";
+            if (this.TotalPage > 0)
+            {
+                txtPageNo.Text = "1";
+            }
+            FillGrid();
+            txtPageNo_Validated_1("", e);
+            //TxtSPurIndNo.Focus();
+            txtPageNo.Text = "1";
+            // filter();
+            //TxtDepCode.Clear();
+        }
+
+        private void BtnGo_Click_1(object sender, EventArgs e)
+        {
+            if (FlxGridLayout.Rows.Count > 1)
+            {
+
+                if (txtPageNo.Text != "" && txtPageNo.Text != "0")
+                {
+                    if (Convert.ToInt32(txtPageNo.Text) - 1 < this.TotalPage)
+                    {
+                        CurrentPageIndex = Convert.ToInt32(txtPageNo.Text);
+                        FillGrid();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Page Number Should Not be Empty");
+                }
+
+            }
+        }
+
+        private void BtnPrevious_Click(object sender, EventArgs e)
+        {
+            this.CurrentPageIndex = 1;
+            txtPageNo.Text = CurrentPageIndex.ToString();
+            FillGrid();
+        }
+
+        private void BtnFirst_Click(object sender, EventArgs e)
+        {
+            if (this.CurrentPageIndex > 1)
+            {
+                this.CurrentPageIndex--;
+                txtPageNo.Text = CurrentPageIndex.ToString();
+                FillGrid();
+            }
+        }
+
+        private void BtnNext_Click(object sender, EventArgs e)
+        {
+            if (this.CurrentPageIndex < this.TotalPage)
+            {
+                this.CurrentPageIndex++;
+                txtPageNo.Text = CurrentPageIndex.ToString();
+                FillGrid();
+
+            }
+        }
+
+        private void BtnLast_Click(object sender, EventArgs e)
+        {
+            this.CurrentPageIndex = TotalPage;
+            txtPageNo.Text = CurrentPageIndex.ToString();
+            FillGrid();
+        }
+
+        private void txtPageNo_Validated_1(object sender, EventArgs e)
+        {
+            if (FlxGridLayout.Rows.Count > 1)
+            {
+                if (txtPageNo.Text != "" && txtPageNo.Text != "0")
+                {
+                    SW.PageNovalidate(txtPageNo, TotalPage, BtnPrevious, BtnFirst, BtnNext, BtnLast);
+                }
+            }
+        }
+
+        private void txtPageNo_TextChanged(object sender, EventArgs e)
+        {
+            if (FlxGridLayout.Rows.Count > 1)
+            {
+                if (txtPageNo.Text != "" && txtPageNo.Text != "0")
+                {
+                    SW.PageNovalidate(txtPageNo, TotalPage, BtnPrevious, BtnFirst, BtnNext, BtnLast);
+
+                    if (Convert.ToInt32(txtPageNo.Text) > TotalPage)
+                    {
+                        MessageBox.Show(" Maximum pages are " + TotalPage + "");
+                        if (this.TotalPage > 0)
+                        {
+                            this.CurrentPageIndex = 1;
+                            txtPageNo.Text = CurrentPageIndex.ToString();
+                        }
+                    }
+
+                }
+                else
+                {
+                    txtPageNo.Clear();
+                    txtPageNo.Focus();
+                }
+            }
+        }
+
+        private void FlxGridLayout_MouseClick(object sender, MouseEventArgs e)
+        {
+
+            if (FlxGridLayout.MouseRow > 0)
+            {
+                for (int i = 0; i < FlxGridLayout.Rows.Count - 1; i++)
+                {
+                    int Selectedrow = FlxGridLayout.Row;
+                    if (Selectedrow >= 1)
+                    {
+                        if (Convert.ToString(FlxGridLayout[Selectedrow, 1]) != "")
+                        {
+                            if (FlxGridLayout.ColSel == 3)
+                            {
+                                //SW.SetFunctionalrights("Purchase", "Purchase Indent Note");
+                                StrAction = "Update";
+                                btnSubmit.Text = "&Update";
+
+
+                                DisplayHeaderTable(Convert.ToString(FlxGridLayout[Selectedrow, 1]));
+
+                            }
+                            if (FlxGridLayout.ColSel == 4)
+                            {
+                                //SW.SetFunctionalrights("Purchase", "Purchase Indent Note");
+                                if (MessageBox.Show("Do you want to Delete the details?", SW.strCompanyName, MessageBoxButtons.YesNo) == DialogResult.Yes)
+                                {
+
+
+                                    DataTable DeleteDtData = new DataTable();
+                                    DeleteDtData = BL.Yusps(Convert.ToString(FlxGridLayout[Selectedrow, 1]), "Delete");
+                                    MessageBox.Show("Deleted Successfully");
+                                    break;
+
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public void DisplayHeaderTable(string PurchaseIndentNo)
+        {
+
+            DataTable DT = new DataTable();
+
+            DT = BL.Yusps(PurchaseIndentNo, "selectHd");
+            if (DT.Rows.Count > 0)
+            {
+                txtID.Text = DT.Rows[0]["yid"].ToString();
+                txtName.Text = DT.Rows[0]["yname"].ToString();
+                txtPass.Text = DT.Rows[0]["ypass"].ToString();
+                combo.Text = DT.Rows[0]["roles"].ToString();
+                
+                //TxtMRPNO.Text = SW.SWGet_Name("Employ_Code", "Tbl_PurIndentHd", "MrpNo", TxtMRPNO.Text);
+            }
+
+
+        }
+
+        private void btnShowAll_Click(object sender, EventArgs e)
+        {
+            SFill();
+        }
+
+        private void txtIdFind_DoubleClick(object sender, EventArgs e)
+        {
+            Callsearch("Location");
+            SWOT_MFG.FrmView FrmV = new SWOT_MFG.FrmView(this, "YfileMe");
+            FrmV.ShowDialog(this);
+        }
+
+        public void Callsearch(string _strOpt)
+        {
+            try
+            {
+
+                switch (_strOpt)
+                {
+                    case "Location":
+                        SW.SWComSearch("SELECT yid ,yname FROM ytable", "Location", "yid", "yname", this, "", "Text ID", "Text Name", "Desc", "", "", "", "", "", "", "", "", "", "", "", 0, "");
+                        break;
+
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.StackTrace st = new System.Diagnostics.StackTrace(true);
+                System.Diagnostics.StackFrame sf = st.GetFrame(0);
+                MessageBox.Show(ex.Message.ToString());
+            }
+        }
+
+        public void ShowRecords(SWOT_MFG.FrmView Frm)
+        {
+            
+                switch (SWOT_MFG.MdlAuto.Tmpfield)
+                {
+                    case "Location":
+                        txtIdFind.Text = FrmView.listvar;
+                        //txtName.Text = FrmView.ListSubVar;
+                        break;
+
+                }
+            
+        }
+
+        private void btnGet_Click(object sender, EventArgs e)
+        {
+            get();
+        }
+
+        private void get()
+        {
+            DataTable DT = new DataTable();
+            
+                //Filldt = BL.PurIndentselect("FillGrid", TxtSPurIndNo.Text, TxtFrom.Text, TxtTo.Text, TxtDepCode.Text,TxtItemCo.Text,TextLocationCode.Text, MdlAuto.StrAccYear, "","");
+              DT = BL.Yusps(txtIdFind.Text,"Fill");
+          
+            if (DT.Rows.Count > 0)
+            {
+                FlxGridLayout.DataSource = DT;
+                SW.SWRowHeaderNocomp(FlxGridLayout);
+            }
+            if (DT.Rows.Count == 0)
+            {
+                FlxGridLayout.DataSource = DT;
+                FlxGridLayout.Refresh();
+            }
+            /*for (int i = 0; i < Filldt.Rows.Count; i++)
+            {
+                FlexGrdPurIndNo.Rows.Add();
+                FlexGrdPurIndNo[i + 1, 1] = Filldt.Rows[i]["PurchaseIndentNo"].ToString();
+                FlexGrdPurIndNo[i + 1, 2] = Convert.ToDateTime(Filldt.Rows[i]["PurchaseIndentDate"]).ToString("dd/MM/yyyy");
+                FlexGrdPurIndNo[i + 1, 3] = Filldt.Rows[i]["EmployeeCode"].ToString();
+                FlexGrdPurIndNo[i + 1, 4] = SW.SWGet_Name("EmployeeName", "Tbl_EmployeeMaster", "EmployeeCode", Filldt.Rows[i]["EmployeeCode"].ToString());
+                FlexGrdPurIndNo[i + 1, 5] = Filldt.Rows[i]["DepartmentCode"].ToString();
+                FlexGrdPurIndNo[i + 1, 6] = SW.SWGet_Name("DepartmentName", "Tbl_DepartmentMaster", "DepartmentCode", Filldt.Rows[i]["DepartmentCode"].ToString());
+                FlexGrdPurIndNo[i + 1, 7] = Filldt.Rows[i]["LocationCode"].ToString();
+                FlexGrdPurIndNo[i + 1, 8] = SW.SWGet_Name("LocationName", "Tbl_Location", "LocationCode", Filldt.Rows[i]["LocationCode"].ToString());
+                FlexGrdPurIndNo[i + 1, 9] = Filldt.Rows[i]["ItemCode"].ToString();
+                //FlexGrdPurIndNo[i + 1, 10] = Filldt.Rows[i]["ItemName"].ToString();
+
+            }*/
+
+
+
+        }
+
+        private void btnRef_Click(object sender, EventArgs e)
+        {
+            txtIdFind.Clear();
+        }
+
+
+
+
+       
+       
+       
+       
+       
+
+        
+       
+       
+       
+        }
+    }
+
